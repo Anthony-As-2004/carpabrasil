@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - CarpaBrasil</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to top, #001F3F, #004080);
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .admin-box {
+      background-color: rgba(0, 0, 0, 0.75);
+      padding: 40px;
+      border-radius: 12px;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 0 15px rgba(0,0,0,0.4);
+    }
+
+    .admin-box h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .admin-box .user-info {
+      text-align: right;
+      font-size: 0.9rem;
+      color: #ccc;
+      margin-bottom: 10px;
+    }
+
+    .admin-box form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .admin-box input[type="text"],
+    .admin-box input[type="file"] {
+      padding: 14px;
+      background-color: #333;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-size: 1rem;
+    }
+
+    .admin-box button {
+      padding: 14px;
+      background-color: #007bff;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      color: white;
+      cursor: pointer;
+    }
+
+    .admin-box button:hover {
+      background-color: #0056b3;
+    }
+
+    .admin-box .logo {
+      display: block;
+      margin: 0 auto 20px;
+      height: 60px;
+    }
+
+    .popup {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: #28a745;
+      color: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      font-size: 1rem;
+      z-index: 9999;
+      display: none;
+    }
+
+    .popup.show {
+      display: block;
+    }
+
+    .popup.error {
+      background-color: #dc3545;
+    }
+
+    .popup button {
+      margin-left: 20px;
+      background: transparent;
+      border: 1px solid white;
+      color: white;
+      padding: 4px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="admin-box">
+    <img src="logo.png" alt="Logo CarpaBrasil" class="logo" />
+    <h2>Cadastro de Produtos</h2>
+    <p class="user-info">Funcionário logado: <strong id="usuarioLogado">Carregando...</strong></p>
+
+    <form id="uploadForm">
+      <input type="text" name="name" placeholder="Nome da Carpa" required />
+      <input type="text" name="price" placeholder="Preço (R$)" required />
+      <input type="file" name="image" accept="image/*" required />
+      <button type="submit">Adicionar Produto</button>
+    </form>
+  </div>
+
+  <div id="mensagemPopup" class="popup"></div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBNi_S-D5Q9XBbw9noW31g-aso4hvxQYp4",
+      authDomain: "catalogocarpabrasil.firebaseapp.com",
+      projectId: "catalogocarpabrasil",
+      storageBucket: "catalogocarpabrasil.firebasestorage.app",
+      messagingSenderId: "529656039009",
+      appId: "1:529656039009:web:367c0ce72daaa06a548c20",
+      measurementId: "G-PD318EP0T5"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) {
+        const nome = user.displayName || user.email;
+        document.getElementById("usuarioLogado").innerText = nome;
+      } else {
+        window.location.href = "index.html";
+      }
+    });
+
+    let formSubmitSuccess = false;
+
+    function exibirMensagem(texto, isErro = false, callback) {
+      const popup = document.getElementById("mensagemPopup");
+      popup.innerHTML = `${texto} <button onclick="fecharPopup()">Fechar</button>`;
+      popup.className = isErro ? "popup error show" : "popup show";
+      formSubmitSuccess = callback;
+    }
+
+    function fecharPopup() {
+      const popup = document.getElementById("mensagemPopup");
+      popup.classList.remove("show");
+      if (formSubmitSuccess) {
+        document.getElementById("uploadForm").reset();
+        formSubmitSuccess = false;
+      }
+    }
+
+    document.getElementById("uploadForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const form = e.target;
+      const formData = new FormData();
+      formData.append("name", form.name.value);
+      formData.append("price", form.price.value);
+      formData.append("image", form.image.files[0]);
+
+      try {
+        const res = await fetch("http://localhost:3000/api/products", {
+          method: "POST",
+          headers: {
+            "Authorization": "admin123"
+          },
+          body: formData
+        });
+
+        if (!res.ok) throw new Error("Erro ao enviar produto");
+
+        exibirMensagem("Produto adicionado com sucesso!", false, true);
+      } catch (err) {
+        exibirMensagem("Erro: " + err.message, true);
+      }
+    });
+  </script>
+</body>
+</html>
