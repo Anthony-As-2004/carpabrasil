@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Login - CarpaBrasil</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to top, #001F3F, #004080);
+      color: white;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .login-container {
+      background-color: rgba(0, 0, 0, 0.75);
+      padding: 50px;
+      border-radius: 12px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 0 15px rgba(0,0,0,0.4);
+    }
+
+    .login-container h2 {
+      margin-bottom: 25px;
+      text-align: center;
+    }
+
+    .login-container input {
+      width: 100%;
+      padding: 15px;
+      margin-bottom: 20px;
+      background-color: #333;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-size: 1rem;
+    }
+
+    .login-container button {
+      width: 100%;
+      padding: 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .login-container button:hover {
+      background-color: #0056b3;
+    }
+
+    .login-container .logo {
+      display: block;
+      margin: 0 auto 25px;
+      height: 60px;
+    }
+
+    .login-container .error-message {
+      color: #ff4d4d;
+      text-align: center;
+      margin-top: 10px;
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <img src="logo.png" alt="Logo CarpaBrasil" class="logo" />
+    <h2>Entrar</h2>
+    <input type="email" id="email" placeholder="E-mail" required>
+    <input type="password" id="senha" placeholder="Senha" required>
+    <button onclick="logar()">Entrar</button>
+    <div class="error-message" id="mensagemErro"></div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBNi_S-D5Q9XBbw9noW31g-aso4hvxQYp4",
+      authDomain: "catalogocarpabrasil.firebaseapp.com",
+      projectId: "catalogocarpabrasil",
+      storageBucket: "catalogocarpabrasil.firebasestorage.app",
+      messagingSenderId: "529656039009",
+      appId: "1:529656039009:web:367c0ce72daaa06a548c20",
+      measurementId: "G-PD318EP0T5"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+
+    function logar() {
+      const email = document.getElementById('email').value;
+      const senha = document.getElementById('senha').value;
+      const mensagemErro = document.getElementById('mensagemErro');
+      mensagemErro.textContent = "";
+
+      firebase.auth().signInWithEmailAndPassword(email, senha)
+        .then(() => {
+          window.location.href = "admin.html";
+        })
+        .catch(error => {
+          mensagemErro.textContent = "Erro ao entrar: " + error.message;
+        });
+    }
+  </script>
+</body>
+</html>
