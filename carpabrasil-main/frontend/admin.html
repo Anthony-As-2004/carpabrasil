@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - CarpaBrasil</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to top, #001F3F, #004080);
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 40px 20px;
+    }
+
+    .admin-box {
+      background-color: rgba(0, 0, 0, 0.75);
+      padding: 30px;
+      border-radius: 12px;
+      max-width: 1000px;
+      width: 100%;
+      box-shadow: 0 0 15px rgba(0,0,0,0.4);
+    }
+
+    h2, h3 { text-align: center; margin-bottom: 15px; }
+
+    .user-info {
+      text-align: right;
+      font-size: 0.9rem;
+      color: #ccc;
+      margin-bottom: 20px;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 25px;
+    }
+
+    input, button {
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+
+    input { background-color: #333; color: white; }
+    button {
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover { background-color: #0056b3; }
+
+    .popup {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: #28a745;
+      color: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      font-size: 1rem;
+      z-index: 9999;
+      display: none;
+    }
+    .popup.show { display: block; }
+    .popup.error { background-color: #dc3545; }
+
+    .product-list {
+      margin-top: 30px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .product-item {
+      background: rgba(255,255,255,0.05);
+      padding: 12px;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .product-item img {
+      max-width: 200px;
+      max-height: 150px;
+      object-fit: contain;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      background: #fff;
+    }
+    .product-actions button {
+      margin: 5px;
+      padding: 6px 12px;
+      font-size: 0.85rem;
+      border-radius: 6px;
+    }
+    .delete-btn { background: #dc3545; }
+    .delete-btn:hover { background: #a71d2a; }
+    .edit-btn { background: #ffc107; color: black; }
+    .edit-btn:hover { background: #e0a800; }
+  </style>
+</head>
+<body>
+  <div class="admin-box">
+    <img src="logo.png" alt="Logo CarpaBrasil" style="display:block;margin:0 auto 20px;height:60px;" />
+    <h2>Painel Administrativo</h2>
+    <p class="user-info">Funcionário logado: <strong id="usuarioLogado">Carregando...</strong></p>
+
+    <!-- Formulário de cadastro -->
+    <h3>Adicionar Produto</h3>
+    <form id="uploadForm">
+      <input type="text" name="name" placeholder="Nome da Carpa" required />
+      <input type="number" name="price" placeholder="Preço (R$)" min="1" step="1" required />
+      <input type="number" name="size" placeholder="Tamanho (cm)" min="1" step="1" required />
+      <input type="text" name="variety" placeholder="Variedade" required />
+      <input type="file" name="image" accept="image/*" required />
+      <button type="submit">Adicionar Produto</button>
+    </form>
+
+    <!-- Formulário de edição -->
+    <h3>Editar Produto</h3>
+    <form id="editForm">
+      <input type="hidden" name="productId" />
+      <input type="number" name="price" placeholder="Novo Preço (R$)" min="1" step="1" />
+      <input type="number" name="size" placeholder="Novo Tamanho (cm)" min="1" step="1" />
+      <input type="text" name="variety" placeholder="Nova Variedade" />
+      <input type="file" name="image" accept="image/*" />
+      <button type="submit">Salvar Alterações</button>
+    </form>
+
+    <!-- Listagem de produtos -->
+    <h3>Produtos Cadastrados</h3>
+    <div id="productList" class="product-list"></div>
+  </div>
+
+  <div id="mensagemPopup" class="popup"></div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBNi_S-D5Q9XBbw9noW31g-aso4hvxQYp4",
+      authDomain: "catalogocarpabrasil.firebaseapp.com",
+      projectId: "catalogocarpabrasil",
+      storageBucket: "catalogocarpabrasil.firebasestorage.app",
+      messagingSenderId: "529656039009",
+      appId: "1:529656039009:web:367c0ce72daaa06a548c20",
+      measurementId: "G-PD318EP0T5"
+    };
+    firebase.initializeApp(firebaseConfig);
+
+    let usuarioLogado = null;
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) {
+        usuarioLogado = user.email;
+        document.getElementById("usuarioLogado").innerText = usuarioLogado;
+      } else {
+        window.location.href = "index.html";
+      }
+    });
+
+    function exibirMensagem(texto, isErro = false) {
+      const popup = document.getElementById("mensagemPopup");
+      popup.textContent = texto;
+      popup.className = isErro ? "popup error show" : "popup show";
+      setTimeout(() => popup.classList.remove("show"), 3000);
+    }
+
+    // Listar produtos
+    async function carregarProdutos() {
+      try {
+        const res = await fetch("http://localhost:3000/api/products");
+        const produtos = await res.json();
+        const container = document.getElementById("productList");
+        container.innerHTML = "";
+
+        produtos.forEach(p => {
+          const div = document.createElement("div");
+          div.className = "product-item";
+          div.innerHTML = `
+            <img src="http://localhost:3000${p.image}" alt="${p.name}" />
+            <div class="product-info">
+              <strong>${p.name}</strong><br>
+              Preço: R$ ${p.price}<br>
+              Tamanho: ${p.size} cm<br>
+              Variedade: ${p.variety}<br>
+              <em>Adicionado por: ${p.user || "Desconhecido"}</em>
+            </div>
+            <div class="product-actions">
+              <button class="edit-btn" onclick="prepararEdicao(${p.id}, ${p.price}, ${p.size}, '${p.variety}')">Editar</button>
+              <button class="delete-btn" onclick="excluirProduto(${p.id})">Excluir</button>
+            </div>
+          `;
+          container.appendChild(div);
+        });
+      } catch (err) {
+        console.error("Erro ao carregar produtos:", err);
+      }
+    }
+
+    // Preparar edição
+    function prepararEdicao(id, price, size, variety) {
+      const form = document.getElementById("editForm");
+      form.productId.value = id;
+      form.price.value = price;
+      form.size.value = size;
+      form.variety.value = variety;
+    }
+
+    // Excluir
+    async function excluirProduto(id) {
+      if (!confirm("Deseja realmente excluir este produto?")) return;
+      try {
+        const res = await fetch(`http://localhost:3000/api/products/${id}`, {
+          method: "DELETE",
+          headers: { "Authorization": "admin123" }
+        });
+        if (!res.ok) throw new Error("Erro ao excluir produto");
+        exibirMensagem("Produto excluído com sucesso!");
+        carregarProdutos();
+      } catch (err) {
+        exibirMensagem("Erro: " + err.message, true);
+      }
+    }
+
+    // Adicionar
+    document.getElementById("uploadForm").addEventListener("submit", async e => {
+      e.preventDefault();
+      const form = e.target;
+      try {
+        const formData = new FormData(form);
+        formData.append("user", usuarioLogado);
+        const res = await fetch("http://localhost:3000/api/products", {
+          method: "POST",
+          headers: { "Authorization": "admin123" },
+          body: formData
+        });
+        if (!res.ok) throw new Error("Erro ao adicionar produto");
+        exibirMensagem("Produto adicionado com sucesso!");
+        form.reset();
+        carregarProdutos();
+      } catch (err) {
+        exibirMensagem("Erro: " + err.message, true);
+      }
+    });
+
+    // Editar
+    document.getElementById("editForm").addEventListener("submit", async e => {
+      e.preventDefault();
+      const form = e.target;
+      if (!form.productId.value) return exibirMensagem("Selecione um produto para editar.", true);
+
+      const formData = new FormData(form);
+      const res = await fetch(`http://localhost:3000/api/products/${form.productId.value}`, {
+        method: "PUT",
+        headers: { "Authorization": "admin123" },
+        body: formData
+      });
+
+      if (res.ok) {
+        exibirMensagem("Produto atualizado com sucesso!");
+        form.reset();
+        carregarProdutos();
+      } else {
+        exibirMensagem("Erro ao editar produto", true);
+      }
+    });
+
+    carregarProdutos();
+  </script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f4f7fc;
+  margin: 0;
+  padding: 0;
+  color: #333;
+}
+
+h1, h2 {
+  text-align: center;
+  color: #004080;
+}
+
+form, .card-container {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 1rem;
+}
+
+input[type="text"], input[type="file"], input[type="email"], input[type="password"], button {
+  display: block;
+  width: 100%;
+  margin: 10px 0;
+  padding: 10px;
+  box-sizing: border-box;
+  font-size: 1rem;
+}
+
+button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+.product-card {
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 1rem;
+  margin: 1rem;
+  text-align: center;
+  width: 250px;
+}
+
+.product-card img {
+  max-width: 100%;
+  border-radius: 4px;
+}
+
+.card-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.site-header {
+  background-color: #004080;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo-header {
+  height: 50px;
+}
+
+.menu-button {
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: white;
+  cursor: pointer;
+}
+
+.hidden-menu {
+  display: none;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 10px 20px;
+  background-color: #004080;
+}
+
+.hidden-menu a {
+  color: white;
+  text-decoration: none;
+  margin: 5px 0;
+  font-size: 18px;
+}
+
+.hidden-menu.show {
+  display: flex;
+}
+
+
+.login-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(to bottom, #003366, #004080);
+  color: white;
+}
+
+.login-container h2 {
+  margin-bottom: 20px;
+}
+
+.login-container input {
+  width: 300px;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  border: none;
+  font-size: 1rem;
+}
+
+.login-container button {
+  width: 300px;
+  padding: 12px;
+  background-color: #007bff;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: background-color 0.3s;
+}

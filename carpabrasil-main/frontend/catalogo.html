@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Catálogo CarpaBrasil</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to top, #001F3F, #004080);
+      color: white;
+      min-height: 100vh;
+      padding: 40px 20px;
+      position: relative;
+    }
+
+    .logo {
+      display: block;
+      margin: 0 auto 20px;
+      height: 60px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .login-button {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .login-button:hover {
+      background-color: #0056b3;
+    }
+
+    .filters {
+      max-width: 1200px;
+      margin: 0 auto 30px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: center;
+    }
+
+    .filters input, .filters select {
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+      font-size: 1rem;
+      background-color: rgba(0, 0, 0, 0.4);
+      color: white;
+      min-width: 120px;
+    }
+
+    .filters input::placeholder {
+      color: #ddd;
+    }
+
+    .filters button {
+      background-color: #28a745;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      padding: 10px 18px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .filters button:hover {
+      background-color: #218838;
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 25px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Flipcards */
+    .flip-card {
+      background-color: transparent;
+      perspective: 1000px;
+      cursor: pointer;
+    }
+
+    .flip-card-inner {
+      position: relative;
+      width: 100%;
+      height: 430px;
+      text-align: center;
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+    }
+
+    .flip-card:hover .flip-card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .flip-card-front, .flip-card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 12px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 15px;
+    }
+
+    .flip-card-front img {
+      width: 100%;
+      max-height: 320px;
+      object-fit: contain;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    .flip-card-back {
+      transform: rotateY(180deg);
+      justify-content: center;
+      font-size: 1.05rem;
+      gap: 10px;
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: #000;
+      border-radius: 12px;
+      padding: 20px;
+      max-width: 700px;
+      text-align: center;
+      position: relative;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .modal-content img {
+      width: 100%;
+      max-height: 450px;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+
+    .modal-content h3 {
+      margin-top: 10px;
+      color: #00bfff;
+    }
+
+    .modal-content p {
+      margin: 5px 0;
+    }
+
+    .close-modal {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      background: transparent;
+      border: none;
+      font-size: 1.5rem;
+      color: white;
+      cursor: pointer;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    /* Paginação */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 25px;
+    }
+
+    .pagination button {
+      background-color: #007bff;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+
+    .pagination button:disabled {
+      background-color: #555;
+      cursor: not-allowed;
+    }
+
+    footer {
+      margin-top: 50px;
+      text-align: center;
+      color: #ccc;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 600px) {
+      .filters {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a href="index.html" id="loginLink" class="login-button">Login</a>
+  <img src="logo.png" alt="Logo CarpaBrasil" class="logo" />
+  <h1>Catálogo de Carpas</h1>
+
+  <!-- Filtros -->
+  <div class="filters">
+    <input type="text" id="filterName" placeholder="Buscar por nome" />
+    <input type="number" id="minPrice" placeholder="Preço mín (R$)" min="0" />
+    <input type="number" id="maxPrice" placeholder="Preço máx (R$)" min="0" />
+    <input type="number" id="minSize" placeholder="Tamanho mín (cm)" min="0" />
+    <input type="number" id="maxSize" placeholder="Tamanho máx (cm)" min="0" />
+    <select id="filterVariety">
+      <option value="">Todas as variedades</option>
+    </select>
+    <select id="sortSelect">
+      <option value="">Ordenar por...</option>
+      <option value="nameAsc">Nome (A-Z)</option>
+      <option value="nameDesc">Nome (Z-A)</option>
+      <option value="priceAsc">Menor preço</option>
+      <option value="priceDesc">Maior preço</option>
+      <option value="sizeAsc">Menor tamanho</option>
+      <option value="sizeDesc">Maior tamanho</option>
+    </select>
+    <button id="clearFilters">Limpar filtros</button>
+  </div>
+
+  <div id="product-list" class="product-grid"></div>
+
+  <div class="pagination">
+    <button id="prevPage">Anterior</button>
+    <button id="nextPage">Próximo</button>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal" id="imageModal">
+    <div class="modal-content">
+      <button class="close-modal" id="closeModal">&times;</button>
+      <img id="modalImage" src="" alt="Imagem do produto">
+      <h3 id="modalName"></h3>
+      <p id="modalPrice"></p>
+      <p id="modalSize"></p>
+      <p id="modalVariety"></p>
+    </div>
+  </div>
+
+  <footer>
+    <p>CarpaBrasil - Especialistas em Carpas Ornamentais</p>
+    <p>Contato: (11) 99999-9999 | contato@carpabrasil.com.br</p>
+  </footer>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBNi_S-D5Q9XBbw9noW31g-aso4hvxQYp4",
+      authDomain: "catalogocarpabrasil.firebaseapp.com",
+      projectId: "catalogocarpabrasil",
+      storageBucket: "catalogocarpabrasil.firebasestorage.app",
+      messagingSenderId: "529656039009",
+      appId: "1:529656039009:web:367c0ce72daaa06a548c20",
+      measurementId: "G-PD318EP0T5"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+
+    firebase.auth().onAuthStateChanged(user => {
+      const loginLink = document.getElementById("loginLink");
+      loginLink.innerText = user ? "Painel Admin" : "Login";
+      loginLink.href = user ? "admin.html" : "index.html";
+    });
+
+    let produtos = [];
+    let produtosFiltrados = [];
+    let paginaAtual = 1;
+    const itensPorPagina = 9;
+
+    async function carregarProdutos() {
+      try {
+        const res = await fetch("http://localhost:3000/api/products");
+        produtos = await res.json();
+        preencherVariedades();
+        aplicarFiltros();
+      } catch (err) {
+        console.error("Erro ao carregar produtos:", err);
+      }
+    }
+
+    function preencherVariedades() {
+      const select = document.getElementById("filterVariety");
+      const variedades = [...new Set(produtos.map(p => p.variety))];
+      select.innerHTML = '<option value="">Todas as variedades</option>';
+      variedades.forEach(v => {
+        const opt = document.createElement("option");
+        opt.value = v;
+        opt.textContent = v;
+        select.appendChild(opt);
+      });
+    }
+
+    function renderizarProdutos(lista) {
+      const container = document.getElementById("product-list");
+      container.innerHTML = "";
+
+      if (lista.length === 0) {
+        container.innerHTML = "<p style='text-align:center;'>Nenhum produto encontrado.</p>";
+        return;
+      }
+
+      const start = (paginaAtual - 1) * itensPorPagina;
+      const end = start + itensPorPagina;
+      const paginaProdutos = lista.slice(start, end);
+
+      paginaProdutos.forEach(prod => {
+        const card = document.createElement("div");
+        card.className = "flip-card";
+        card.innerHTML = `
+          <div class="flip-card-inner">
+            <div class="flip-card-front">
+              <img src="http://localhost:3000${prod.image}" alt="${prod.name}" />
+              <h3>${prod.name}</h3>
+            </div>
+            <div class="flip-card-back">
+              <p><strong>Preço:</strong> R$ ${prod.price}</p>
+              <p><strong>Tamanho:</strong> ${prod.size} cm</p>
+              <p><strong>Variedade:</strong> ${prod.variety}</p>
+            </div>
+          </div>
+        `;
+        card.addEventListener("click", () => abrirModal(prod));
+        container.appendChild(card);
+      });
+
+      document.getElementById("prevPage").disabled = paginaAtual === 1;
+      document.getElementById("nextPage").disabled = end >= lista.length;
+    }
+
+    function abrirModal(prod) {
+      document.getElementById("imageModal").style.display = "flex";
+      document.getElementById("modalImage").src = "http://localhost:3000" + prod.image;
+      document.getElementById("modalName").textContent = prod.name;
+      document.getElementById("modalPrice").textContent = "Preço: R$ " + prod.price;
+      document.getElementById("modalSize").textContent = "Tamanho: " + prod.size + " cm";
+      document.getElementById("modalVariety").textContent = "Variedade: " + prod.variety;
+    }
+
+    document.getElementById("closeModal").addEventListener("click", () => {
+      document.getElementById("imageModal").style.display = "none";
+    });
+
+    document.getElementById("imageModal").addEventListener("click", (e) => {
+      if (e.target.id === "imageModal") {
+        document.getElementById("imageModal").style.display = "none";
+      }
+    });
+
+    function aplicarFiltros() {
+      const nome = document.getElementById("filterName").value.toLowerCase();
+      const minPrice = parseFloat(document.getElementById("minPrice").value);
+      const maxPrice = parseFloat(document.getElementById("maxPrice").value);
+      const minSize = parseFloat(document.getElementById("minSize").value);
+      const maxSize = parseFloat(document.getElementById("maxSize").value);
+      const variedade = document.getElementById("filterVariety").value;
+      const sort = document.getElementById("sortSelect").value;
+
+      produtosFiltrados = produtos.filter(p => {
+        const nomeMatch = p.name.toLowerCase().includes(nome);
+        const precoMatch = (!minPrice || p.price >= minPrice) && (!maxPrice || p.price <= maxPrice);
+        const tamanhoMatch = (!minSize || p.size >= minSize) && (!maxSize || p.size <= maxSize);
+        const variedadeMatch = !variedade || p.variety === variedade;
+        return nomeMatch && precoMatch && tamanhoMatch && variedadeMatch;
+      });
+
+      produtosFiltrados.sort((a, b) => {
+        switch (sort) {
+          case "nameAsc": return a.name.localeCompare(b.name);
+          case "nameDesc": return b.name.localeCompare(a.name);
+          case "priceAsc": return a.price - b.price;
+          case "priceDesc": return b.price - a.price;
+          case "sizeAsc": return a.size - b.size;
+          case "sizeDesc": return b.size - a.size;
+          default: return 0;
+        }
+      });
+
+      paginaAtual = 1;
+      renderizarProdutos(produtosFiltrados);
+    }
+
+    document.querySelectorAll('.filters input, .filters select').forEach(el => {
+      el.addEventListener('input', aplicarFiltros);
+      el.addEventListener('change', aplicarFiltros);
+    });
+
+    document.getElementById('clearFilters').addEventListener('click', () => {
+      document.querySelectorAll('.filters input').forEach(el => el.value = "");
+      document.querySelectorAll('.filters select').forEach(el => el.value = "");
+      paginaAtual = 1;
+      aplicarFiltros();
+    });
+
+    document.getElementById('prevPage').addEventListener('click', () => {
+      if (paginaAtual > 1) {
+        paginaAtual--;
+        renderizarProdutos(produtosFiltrados);
+      }
+    });
+
+    document.getElementById('nextPage').addEventListener('click', () => {
+      const totalPaginas = Math.ceil(produtosFiltrados.length / itensPorPagina);
+      if (paginaAtual < totalPaginas) {
+        paginaAtual++;
+        renderizarProdutos(produtosFiltrados);
+      }
+    });
+
+    carregarProdutos();
+  </script>
+</body>
+</html>
